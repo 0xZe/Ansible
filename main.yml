@@ -1,0 +1,134 @@
+---
+# tasks file for ze
+
+# Task1
+- name: update the yum packages
+  yum:
+    update_cache: yes
+  when: ansible_os_family == "RedHat"
+  when: ansible_facts["os_family"]=="RedHat"
+
+#Task2
+- name: install required utilities
+  yum:
+    name: wget
+    state: latest
+
+#Task3
+- name: Install OpenJDK 1.8
+  yum:
+    name: java-1.8.0-openjdk.x86_64
+    state: latest
+
+#Task4 => what if exists?
+- name: Create a directory named app
+  file:
+    path: /app
+    state: directory
+
+#Task5
+- name: cd into the /app directory
+  command: cd /app
+
+#Task6
+
+#- name: Download the latest nexus
+#  command: wget -O nexus.tar.gz https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+
+- name: Download the latest nexus
+  get_url:
+    url: https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+    dest: /app
+    
+
+#Task7
+- name: Untar the downloaded file
+  unarchive:
+    src: /app/nexus-3.43.0-01-unix.tar.gz
+    dest: /app
+    remote_src: yes
+
+#Task8 => => what if exists?
+- name: Rename the untared file to nexus
+  command: mv /app/nexus-3.43.0-01 /app/nexus
+
+#- name: Check if nexus exists
+#    stat:
+#      path: "/path/to/something"
+#    register: result
+  
+#- name: "Do something if directory exists"
+#    command: ...
+#    when: (result.stat.isdir is defined) and (result.stat.isdir)
+
+#Task9
+- name: create a new user named nexus to run the nexus service
+  user:
+    name: nexus
+
+#Task10
+- name: Change the ownership of nexus files and nexus data directory to nexus user
+  file:
+    path: /app/nexus
+    owner: nexus
+    group: nexus
+
+- name: Change the ownership of nexus files and nexus data directory to nexus user
+  file:
+    path: /app/sonatype-work
+    owner: nexus
+    group: nexus
+
+
+#Task11 => template ? => vim module ?
+- name: Open /app/nexus/bin/nexus.rc file and Uncomment run_as_user parameter and set it as "nexus"
+  copy:
+    src: /home/ze/Desktop/ansible/Nexus3/Nexus3 Role/files/nexus.rc
+    dest: /app/nexus/bin/nexus.rc
+
+#- name: Open /app/nexus/bin/nexus.rc file
+#  command: vi /app/nexus/bin/nexus.rc
+#  notify: Uncomment run_as_user parameter and set it as "nexus"
+
+#Task12
+#- name: Uncomment run_as_user parameter and set it as "nexus"
+# replace:
+#    path: /app/nexus/bin/nexus.rc
+#    regexp: '#run_as_user='
+#   replace: 'run_as_user="nexus"'
+
+#Task13 => template?
+- name: Create a nexus systemd unit file
+  copy:
+    src: /home/ze/Desktop/ansible/Nexus3/Nexus3 Role/files/nexus.service
+    dest: /etc/systemd/system/nexus.service
+
+#Task
+- name: just force systemd to reread configs 
+  systemd:
+    daemon_reload: yes
+
+#Task14
+- name: Enable service nexus
+  service:
+    name: nexus
+    enabled: yes
+
+#Task15
+- name: Start service nexus, if not running
+  service:
+    name: nexus
+    state: started
+
+
+
+
+
+
+
+
+
+
+
+
+
